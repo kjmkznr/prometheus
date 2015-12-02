@@ -49,6 +49,7 @@ type EC2Discovery struct {
 	done     chan struct{}
 	interval time.Duration
 	port     int
+	filters  []config.EC2SDFilter
 }
 
 // NewEC2Discovery returns a new EC2Discovery which periodically refreshes its targets.
@@ -65,6 +66,7 @@ func NewEC2Discovery(conf *config.EC2SDConfig) *EC2Discovery {
 		done:     make(chan struct{}),
 		interval: time.Duration(conf.RefreshInterval),
 		port:     conf.Port,
+		filters:  conf.Filters,
 	}
 }
 
@@ -108,7 +110,18 @@ func (ed *EC2Discovery) refresh() (*config.TargetGroup, error) {
 	tg := &config.TargetGroup{
 		Source: *ed.aws.Region,
 	}
-	if err := ec2s.DescribeInstancesPages(nil, func(p *ec2.DescribeInstancesOutput, lastPage bool) bool {
+	var ec2filters []*ec2.Filter
+	for _, f := range ed.filters {
+		filter := &ec2.Filter{
+			Name:   aws.String(f.Name),
+			Values: aws.StringSlice(f.Values),
+		}
+		ec2filters = append(ec2filters, filter)
+	}
+	describeInstancesInput := &ec2.DescribeInstancesInput{
+		Filters: ec2filters,
+	}
+	if err := ec2s.DescribeInstancesPages(describeInstancesInput, func(p *ec2.DescribeInstancesOutput, lastPage bool) bool {
 		for _, r := range p.Reservations {
 			for _, inst := range r.Instances {
 				if inst.PrivateIpAddress == nil {

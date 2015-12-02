@@ -708,11 +708,19 @@ func (c *KubernetesSDConfig) UnmarshalYAML(unmarshal func(interface{}) error) er
 
 // EC2SDConfig is the configuration for EC2 based service discovery.
 type EC2SDConfig struct {
-	Region          string   `yaml:"region"`
-	AccessKey       string   `yaml:"access_key,omitempty"`
-	SecretKey       string   `yaml:"secret_key,omitempty"`
-	RefreshInterval Duration `yaml:"refresh_interval,omitempty"`
-	Port            int      `yaml:"port"`
+	Region          string        `yaml:"region"`
+	AccessKey       string        `yaml:"access_key,omitempty"`
+	SecretKey       string        `yaml:"secret_key,omitempty"`
+	RefreshInterval Duration      `yaml:"refresh_interval,omitempty"`
+	Port            int           `yaml:"port"`
+	Filters         []EC2SDFilter `yaml:"filters,omitempty"`
+	// Catches all undefined fields and must be empty after parsing.
+	XXX map[string]interface{} `yaml:",inline"`
+}
+
+type EC2SDFilter struct {
+	Name   string   `yaml:"name"`
+	Values []string `yaml:"values"`
 	// Catches all undefined fields and must be empty after parsing.
 	XXX map[string]interface{} `yaml:",inline"`
 }
